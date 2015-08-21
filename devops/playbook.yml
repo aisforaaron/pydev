@@ -1,0 +1,65 @@
+---
+# Build a dev box for Python/Django
+- hosts: all
+  sudo: yes
+  vars:
+    # apache
+    http_port: '80'
+    domain: 'pydev.local'
+  tasks:
+    - name: install packages
+      apt: name={{ item }} update_cache=yes state=latest
+      with_items:
+        - mysql-server 
+        - python-pip
+        - python-dev 
+        - apache2
+        - libapache2-mod-auth-mysql
+        - libapache2-mod-wsgi
+        - libmysqlclient-dev
+        - git
+        - screen
+        - pv
+
+    # python packages, need sudo
+    - pip: name=mysqlclient
+    - pip: name=django
+    - pip: name=requests
+    - pip: name=Sphinx
+
+    # apache configurations
+    - name: Enabled mod_rewrite
+      apache2_module: name=rewrite state=present
+      notify:
+        - restart apache2
+
+    # apache httpd.conf
+    - name: Overwrite httpd.conf file with custom django site settings
+      template: src=httpd.conf dest=/etc/apache2/httpd.conf
+
+    # apache vhost
+    - name: Create virtual host file
+      template: src=virtualhost.conf dest=/etc/apache2/sites-available/{{ domain }}
+
+    - name: a2ensite vhost
+      command: a2ensite {{ domain }}
+      args:
+        creates: /etc/apache2/sites-enabled/{{ domain }}.conf
+      notify:
+      - restart apache2
+
+    # create mysql db & user
+    - name: Add new db
+      mysql_db: name=pydev state=present
+      notify: 
+      - import pydev database
+
+    - name: Create database user
+      mysql_user: user=pyguy password=pypass priv=*.*:ALL state=present
+
+  handlers:
+    - name: restart apache2
+      service: name=apache2 state=restarted
+
+    - name: import pydev database
+      mysql_db: name=pydev state=import target=/vagrant_data/assets/pydev.sql
