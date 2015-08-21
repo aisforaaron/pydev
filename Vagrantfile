@@ -73,10 +73,6 @@ Vagrant.configure(2) do |config|
   # Provision with Ansible
   config.vm.provision "ansible" do |ansible|
     ansible.sudo = true
-    #ansible.inventory_path = "devops/ansible_hosts"
-    #ansible.groups = {
-    #    "pydev" => ["default"]
-    #}
     ansible.playbook = "devops/playbook.yml"
   end
 end
