@@ -3,3 +3,6 @@ share/pydev.local/static/*
 
 # Skip any Mac OS .DS_Store file
 .DS_Store
+
+# misc
+.vagrant
